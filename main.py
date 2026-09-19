@@ -15,6 +15,8 @@ def binary_search(
         return index
     return -1
 
+NULL_DESCRIPTION: str = ''
+
 def main():
 
     WORD_LIMIT: int | None = None
@@ -24,8 +26,11 @@ def main():
     words: list[str] = []
     descriptions: list[str] = []
 
+
+    ENABLE_WORD_LIST_FILE_NAME: str = "enable2k.txt"
+
     print()
-    print("Loading enable word list into dictionary")
+    print(f"Loading enable word list from '{ENABLE_WORD_LIST_FILE_NAME}' into words list")
     print()
 
     with open(
@@ -46,28 +51,31 @@ def main():
 
     words.sort()
 
+
     print("Reserving memory for descriptions list")
     print()
 
-    descriptions = [ '' ] * enable_word_count
+    descriptions = [ NULL_DESCRIPTION ] * enable_word_count
 
-    print("Loading dictionary descriptions into descriptions")
+
+    WIKTIONARY_FILE_NAME: str = "kaikki.org-dictionary-English.jsonl"
+
+    print(f"Mapping words from '{ENABLE_WORD_LIST_FILE_NAME}' to descriptions from '{WIKTIONARY_FILE_NAME}' (storing descriptions in descriptions list)")
     print()
 
-    WIKITIONARY_DESCRIPTION_LIMIT: int | None = None
+    WIKTIONARY_DESCRIPTION_LIMIT: int | None = None
 
     description_dictionary_word_count: int = 0
-    words_with_definitions: int = 0
 
     with open(
-        file="kaikki.org-dictionary-English.jsonl",
+        file=WIKTIONARY_FILE_NAME,
         mode="r",
         newline='',
         encoding="utf-8"
     ) as kaikki_org_dictionary_english_jsonl_file:
 
         for i, line in enumerate(kaikki_org_dictionary_english_jsonl_file):
-            if WIKITIONARY_DESCRIPTION_LIMIT is not None and i >= WIKITIONARY_DESCRIPTION_LIMIT:
+            if WIKTIONARY_DESCRIPTION_LIMIT is not None and i >= WIKTIONARY_DESCRIPTION_LIMIT:
                 break
 
             entry = json.loads(line)
@@ -98,18 +106,37 @@ def main():
                 continue
 
             formatted_word = word.upper().replace('-', '').replace(' ', '')
-            if formatted_word == "ABLINS":
-                print("FOUND ABLINS ENTRY IN WIKTIONARY:\n\n", entry, "\n\n")
             formatted_word_index: int = binary_search(words, formatted_word)
-            if formatted_word_index != -1 and descriptions[formatted_word_index] == '':
+            if formatted_word_index >= 0 and descriptions[formatted_word_index] == NULL_DESCRIPTION:
                 descriptions[formatted_word_index] = desc
-                words_with_definitions += 1
 
-    print("Writing dictionary to word_game_dictionary.txt")
+
+    ORPHAN_WORD_DESCRIPTIONS_FILE_NAME: str = "orphan_words_with_added_descriptions.txt"
+
+    print(f"Filling orphan words (words with no descriptions) with word descriptions in '{ORPHAN_WORD_DESCRIPTIONS_FILE_NAME}'")
     print()
 
     with open(
-        file="word_game_dictionary.txt",
+        file=ORPHAN_WORD_DESCRIPTIONS_FILE_NAME,
+        mode="r",
+        encoding="utf-8",
+        newline=''
+    ) as orphan_word_desription_txt_file:
+        for line in orphan_word_desription_txt_file:
+            stripped_line = line.strip()
+            word, description = stripped_line.split(' ', maxsplit=1)
+            orphan_word_index: int = binary_search(words, word)
+            if orphan_word_index >= 0 and descriptions[orphan_word_index] == NULL_DESCRIPTION:
+                descriptions[orphan_word_index] = description
+
+
+    WORD_GAME_DICTIONARY_FILE_NAME: str = "word_game_dictionary.txt"
+                
+    print(f"Writing dictionary to '{WORD_GAME_DICTIONARY_FILE_NAME}'")
+    print()
+
+    with open(
+        file=WORD_GAME_DICTIONARY_FILE_NAME,
         mode="w",
         encoding="utf-8",
         newline=''
@@ -126,18 +153,21 @@ def main():
         newline=''
     ) as words_without_descriptions_txt_file:
         for word, description in zip(words, descriptions):
-            if description == '':
+            if description == NULL_DESCRIPTION:
                 words_without_descriptions_txt_file.write(f"{word}\n")
+
+    words_without_descriptions: int = 0
+    for description in descriptions:
+        if description == NULL_DESCRIPTION:
+            words_without_descriptions += 1
+
+    words_with_descriptions: int = enable_word_count - words_without_descriptions
 
     print("ENABLE word count: ", enable_word_count)
     print("Description dictionary word count: ", description_dictionary_word_count)
-    print("Words with definitions: ", words_with_definitions)
-    print("Words without definitions: ", enable_word_count - words_with_definitions)
-    print("Coverage: ", words_with_definitions / enable_word_count * 100, '%')
-
-    print("binary search ABLINS index: ", binary_search(words, "ABLINS"))
-    print("Is 'ABLINS' in words: ", "ABLINS" in words)
-    print("result index: ", words[binary_search(words, "ABLINS")])
+    print("Words with definitions: ", words_with_descriptions)
+    print("Words without definitions: ", words_without_descriptions)
+    print("Coverage: ", words_with_descriptions / enable_word_count * 100, '%')
 
 if __name__ == "__main__":
     main()
