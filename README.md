@@ -162,6 +162,7 @@ The Kaikki.org English dictionary data in JSON Lines format.
 Each line contains a JSON dictionary entry containing information such as the word and its senses.
 
 [website](https://kaikki.org/dictionary/English/words/index.html)
+
 [download](https://kaikki.org/dictionary/English/words/kaikki.org-dictionary-English-words.jsonl)
 
 ### `orphan_words_with_added_descriptions.txt`
